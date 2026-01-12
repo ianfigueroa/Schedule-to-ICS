@@ -6,7 +6,7 @@ export interface Time{
 export interface Course {
     id: number;
     code: string;
-    selection: string;
+    section: string;
     startTime: Time;
     endTime:  Time;
     days: DayCode[];
