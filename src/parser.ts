@@ -148,17 +148,50 @@ function parseLine(line: string): Course | null {
         days = ['MO'];
     }
 
-    // everything else is location and professor
-    const rest = afterParts.slice(locationStart).join(' ');
+    // everything else is location and professor - gotta be smart about splitting them
+    const restParts = afterParts.slice(locationStart);
     let location = '';
-    let professor = rest;
+    let professor = '';
+    let professorStart = 0;
 
-    // try to extract location (looks like "S 113" or "CH 221")
-    const locMatch = rest.match(/^([A-Z]{1,4}[-\s]?\d{1,4})/i);
-    if (locMatch) {
-        location = locMatch[1].trim();
-        professor = rest.substring(locMatch[0].length).trim();
+    // try to find location (looks like "S 113", "CH221", "S-113", "II 225")
+    for (let i = 0; i < restParts.length; i++) {
+        const part = restParts[i];
+        const nextPart = restParts[i + 1] || '';
+
+        // pattern: "S 113" - building letter(s) then space then room number
+        if (/^[A-Z]{1,4}$/i.test(part) && /^\d{1,4}$/.test(nextPart)) {
+            location = `${part} ${nextPart}`;
+            professorStart = i + 2;
+            break;
+        }
+        // pattern: "S113" or "CH-221" - building and room together
+        else if (/^[A-Z]{1,4}[-]?\d{1,4}$/i.test(part)) {
+            location = part;
+            professorStart = i + 1;
+            break;
+        }
+        // pattern: just building code like "II" before a name
+        else if (/^[A-Z]{1,2}$/i.test(part) && nextPart && /^[A-Z][a-z]/.test(nextPart)) {
+            // next part looks like a name, so this short code might be building without room
+            location = part;
+            professorStart = i + 1;
+            break;
+        }
     }
+
+    // if no location pattern matched, check if first part could be location
+    if (!location && restParts.length > 0) {
+        const first = restParts[0];
+        // if first part is short uppercase, might be building code
+        if (/^[A-Z]{1,4}$/i.test(first) && restParts.length > 1) {
+            location = first;
+            professorStart = 1;
+        }
+    }
+
+    // everything after location is professor
+    professor = restParts.slice(professorStart).join(' ').trim();
 
     return {
         id: Date.now() + Math.random(), // good enough unique id
@@ -264,9 +297,36 @@ export function parseSchedule(text: string): Course[] {
 
     // otherwise treat as plain text
     const lines = text.split('\n').filter(L => L.trim().length > 5);
-    return lines.map(parseLine).filter((c): c is Course => c !== null && !!c.code);
+
+    // expand lines that might have multiple courses smashed together
+    const expanded: string[] = [];
+    for (const line of lines) {
+        const chunks = splitByCourseCode(line);
+        expanded.push(...chunks);
+    }
+    return expanded.map(parseLine).filter((c): c is Course => c !== null && !!c.code);
 }
 
+
+// Split text that has multiple courses without line breaks
+function splitByCourseCode(text: string): string[] {
+    const matches: number[] = [];
+    const pattern = /[A-Z]{4}\d{4}/gi;  // finds MATE3032, ING1321, etc.
+    let m;
+    
+    while ((m = pattern.exec(text)) !== null) {
+        matches.push(m.index);
+    }
+
+    // if only one course code found, return as-is
+    if (matches.length <= 1) return [text];
+
+    // split at each course code position
+    return matches.map((idx, i) => {
+        const end = i < matches.length - 1 ? matches[i + 1] : text.length;
+        return text.substring(idx, end).trim();
+    }).filter(s => s.length > 5);
+}
 
 // Format time for display (12-hour with am/pm)
 export function formatTime(t: Time): string {
