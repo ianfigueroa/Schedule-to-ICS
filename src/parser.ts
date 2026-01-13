@@ -1,4 +1,4 @@
-import type { Time, Course, DayCode, UPRMDay } from "../types";
+import type { Time, Course, DayCode, UPRMDay } from "./types";
 
 // UPRM' Spanish days to ICS format
 // L - Monday (Lunes), M - Tuesday (Martes), W - Wednesday (Miércoles), J - Thursday (Jueves), V - Friday (Viernes)

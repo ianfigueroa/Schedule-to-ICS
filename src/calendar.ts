@@ -1,4 +1,4 @@
-import type { Course, DayCode } from "../types";
+import type { Course, DayCode } from "./types";
 
 // Calculate which day of the week (Monday=0)
 const WEEKDAY_NUM: Record<DayCode, number> = {
