@@ -23,8 +23,8 @@ Because manually adding each class to your calendar is tedious, and the enrollme
 3. Set your semester start/end dates
 4. Download the .ics file
 5. Import it into your calendar app
-
-The parser handles the standard format from the portal:
+   where
+   The parser handles the standard format from the portal:
 
 ```
 MATE3031 026 4 8:30 am - 10:20 am MJ S 113 Michael
@@ -75,6 +75,19 @@ You can also upload a CSV if you have your schedule in that format.
 | `calendar.ts` | Generates ICS file content with recurring events       |
 | `ui.ts`       | All DOM manipulation, rendering courses, modals        |
 | `types.ts`    | TypeScript interfaces (`Course`, etc.)                 |
+
+---
+
+## Roadmap
+
+- [ ] Color-coded classes by course type or custom colors
+- [ ] Improve parsing algorithm for edge cases
+- [ ] Screenshot/OCR text reading (upload image of schedule)
+- [ ] More flexible text parsing for different formats
+- [ ] Export to Google Calendar API directly
+- [ ] Dark mode
+
+Have a suggestion? [Open an issue](https://github.com/ianfigueroa/schedule_to_ics/issues)!
 
 ---
 
