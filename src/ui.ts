@@ -57,3 +57,51 @@ export function setScheduleText(content: string) {
     els.scheduleInput.value = content;
 }   
 
+export function renderCourses(
+    courses: Course[],
+    onRemove: (id: number) => void,
+    onEdit: (id: number) => void
+) {
+    if (courses.length === 0) {
+        els.coursesList.innerHTML = '<div class="empty">No courses parsed yet.</div>';
+        els.downloadBtn.disabled = true;
+        return;
+    }   
+    els.downloadBtn.disabled = false;
+
+    // Build the HTML for each course
+    els.coursesList.innerHTML = courses.map(course => `
+        <div class="course-item" data-id="${course.id}">
+            <div class="info">
+                <div class="code">${course.code}${course.section ? ' - ' + course.section : ''}</div>
+                <div class="details">
+                    ${formatTime(course.startTime)} - ${formatTime(course.endTime)} · ${formatDays(course.days)}
+                    ${course.location ? ' · ' + course.location : ''}
+                    ${course.professor ? ' · ' + course.professor : ''}
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn-edit" title="Edit">Edit</button>
+                <button class="btn-remove" title="Remove">Remove</button>
+            </div>
+        </div>
+    `).join('');
+
+    // Hook up delete buttons
+    els.coursesList.querySelectorAll('.btn-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const item = (e.target as HTMLElement).closest('.course-item')!;
+            const id = Number(item.getAttribute('data-id'));
+            onRemove(id);
+        });
+    });
+
+    // Hook up edit buttons
+    els.coursesList.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const item = (e.target as HTMLElement).closest('.course-item')!;
+            const id = Number(item.getAttribute('data-id'));
+            onEdit(id);
+        });
+    });
+}
