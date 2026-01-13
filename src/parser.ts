@@ -172,14 +172,21 @@ function parseLine(line: string): Course | null {
     };
 }
 
-//Checks if the input looks like csv data
+// Checks if the input looks like csv data
 function isCSV(text: string): boolean {
-    const lines = text.split('\n')
+    const lines = text.split('\n');
     if (lines.length < 2) return false;
 
     const header = lines[0].toLowerCase();
-    return header.includes("course") || header.includes("section") || lines[0].includes("\t") || (lines[0].match(/,/g) ||).length >= 3;
+
+    return (
+        header.includes("course") ||
+        header.includes("section") ||
+        lines[0].includes("\t") ||
+        (lines[0].match(/,/g) || []).length >= 3
+    );
 }
+
 
 // Parse into CSV format
 function parseCSV(text: string): Course[] {
