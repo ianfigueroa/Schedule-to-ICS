@@ -86,7 +86,7 @@ export function parseDays(str: string): DayCode[] {
 
 // Parse a single line of schedule text
 function parseLine(line: string): Course | null {
-    // look for the time range - this is our anchor point
+    // look for the time range dis is our anchor point
     const timeMatch = line.match(
         /(\d{1,2}:\d{2}\s*(?:am|pm)?)\s*-\s*(\d{1,2}:\d{2}\s*(?:am|pm)?)/i
     );
@@ -98,7 +98,7 @@ function parseLine(line: string): Course | null {
 
     if (!startTime || !endTime) return null;
 
-    // split the line into before-time and after-time parts
+    // split the line into before time and after time parts
     const beforeTime = line.substring(0, timeMatch.index).trim();
     const afterTime = line
         .substring(timeMatch.index! + timeMatch[0].length)
@@ -107,7 +107,7 @@ function parseLine(line: string): Course | null {
     // parse the stuff before the time (course code, section, credits)
     const beforeParts = beforeTime.split(/\s+/);
     let code = '';
-    let selection = '';
+    let section = '';
 
     for (const part of beforeParts) {
         // course codes look like MATE3031, CIIC4010
@@ -115,12 +115,12 @@ function parseLine(line: string): Course | null {
             code = part.toUpperCase();
         }
         // sections are 2-3 digit numbers
-        else if (/^\d{2,3}$/.test(part) && !selection) {
-            selection = part;
+        else if (/^\d{2,3}$/.test(part) && !section) {
+            section = part;
         }
     }
 
-    // fallback - just use first thing as code
+    // fallback  just use first thing as code
     if (!code && beforeParts[0]) {
         code = beforeParts[0].toUpperCase();
     }
@@ -170,4 +170,92 @@ function parseLine(line: string): Course | null {
         location,
         professor
     };
+}
+
+//Checks if the input looks like csv data
+function isCSV(text: string): boolean {
+    const lines = text.split('\n')
+    if (lines.length < 2) return false;
+
+    const header = lines[0].toLowerCase();
+    return header.includes("course") || header.includes("section") || lines[0].includes("\t") || (lines[0].match(/,/g) ||).length >= 3;
+}
+
+// Parse into CSV format
+function parseCSV(text: string): Course[] {
+    const lines = text.trim().split('\n');
+    const delim = lines[0].includes('\t') ? '\t' : ','; 
+    const header = lines[0].split(delim).map(h => h.trim().toLowerCase());
+
+    // Identify column indices
+    const findCol  = (name: string) => header.findIndex(h => h.includes(name));
+
+    const courseCol = findCol("course")
+    const sectionCol = findCol("section");
+    const daysCol = findCol("day");
+    const scheduleCol = Math.max(findCol("schedule"), findCol("time"));
+    const roomCol = Math.max(findCol("room"), findCol("location"));
+    const courses:  Course[] = [];
+
+
+    //  parse each line
+    for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(delim).map(c => c.trim());
+        if (!row[0]) continue;
+
+        const code = row[courseCol >= 0 ? courseCol : 0]  || '';
+        if (!/^[A-Z]{4}\d{4}/i.test(code)) continue; // skip invalid course codes
+
+        const section = row[sectionCol >= 0 ? sectionCol : 1] || '';
+        const daysStr = row[daysCol >= 0 ? daysCol : 4] || '';
+        const timeStr = row[scheduleCol >= 0 ? scheduleCol : 5] || '';
+        const room = row[roomCol >= 0 ? roomCol : 6] || '';
+
+        const days = parseDays(daysStr);
+        if (days.length === 0) continue;
+        
+        //parse time which could be range or just start time
+        let start: Time | null = null;
+        let end: Time | null = null;
+
+        const range = timeStr.match(/(\d{1,2}:\d{2}\s*(?:am|pm)?)\s*-\s*(\d{1,2}:\d{2}\s*(?:am|pm)?)/i);
+        if (range) {
+            start = parseTime(range[1]);
+            end = parseTime(range[2]);
+        } else {
+            start = parseTime(timeStr)
+            if (start) {
+                const duration = (days.includes("TU") || days.includes("TH")) ? 75 : 90; // shorter duration for Tue/Thu
+                const totalMins = start.hour * 60 + start.minute + duration;
+                end = { hour: Math.floor(totalMins / 60), minute: totalMins % 60 };
+            }
+        }
+
+        if (!start || !end) continue;
+
+        courses.push({
+            id: Date.now() + Math.random(),
+            code: code.toUpperCase(),
+            section,
+            startTime: start,
+            endTime: end,
+            days,
+            location: room,
+            professor: ''
+        });
+    }
+    return courses;
+}
+
+// Main parse function
+export function parseSchedule(text: string): Course[] {
+    // we try to detect if it's csv first
+    if (isCSV(text)) {
+        const courses = parseCSV(text);
+        if (courses.length > 0) return courses;
+    }
+
+    // otherwise treat as plain text
+    const lines = text.split('\n').filter(L => L.trim().length > 5);
+    return lines.map(parseLine).filter((c): c is Course => c !== null && !!c.code);
 }
