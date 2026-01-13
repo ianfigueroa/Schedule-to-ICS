@@ -38,7 +38,7 @@ function findFirstClassDate(semesterStart: Date, days: DayCode[]): Date {
 }
 
 // Generate ICS event for courses
-export function generateICSEvent(courses: Course[], startDate: string, endDate: string): string {
+export function generateICS(courses: Course[], startDate: string, endDate: string): string {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const now = new Date();
