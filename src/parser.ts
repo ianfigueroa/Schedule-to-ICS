@@ -266,3 +266,25 @@ export function parseSchedule(text: string): Course[] {
     const lines = text.split('\n').filter(L => L.trim().length > 5);
     return lines.map(parseLine).filter((c): c is Course => c !== null && !!c.code);
 }
+
+
+// Format time for display (12-hour with am/pm)
+export function formatTime(t: Time): string {
+    const hour12 = t.hour % 12 || 12;
+    const period = t.hour >= 12 ? 'pm' : 'am';
+    const mins = t.minute.toString().padStart(2, '0');
+    return `${hour12}:${mins} ${period}`;
+}
+
+// Format time for HTML time input (24 hour HH:MM)
+export function formatTimeInput(t: Time): string {
+    const hh = t.hour.toString().padStart(2, '0');
+    const mm = t.minute.toString().padStart(2, '0');
+    return `${hh}:${mm}`;
+}
+
+// Format days for display
+export function formatDays(days: DayCode[]): string {
+    return days.map(d => DAY_NAMES[d]).join(' ');
+}
+
