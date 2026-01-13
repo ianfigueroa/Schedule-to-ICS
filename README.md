@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📅 UPRM Schedule to ICS
+# UPRM Schedule to ICS
 
 **Convert your UPRM class schedule into a calendar file (.ics)**
 
@@ -68,13 +68,13 @@ You can also upload a CSV if you have your schedule in that format.
 
 ### Module Breakdown
 
-| File | Purpose |
-|------|---------|
-| `main.ts` | Entry point, event handlers, app state management |
-| `parser.ts` | Parses schedule text and CSV files into course objects |
-| `calendar.ts` | Generates ICS file content with recurring events |
-| `ui.ts` | All DOM manipulation, rendering courses, modals |
-| `types.ts` | TypeScript interfaces (`Course`, etc.) |
+| File          | Purpose                                                |
+| ------------- | ------------------------------------------------------ |
+| `main.ts`     | Entry point, event handlers, app state management      |
+| `parser.ts`   | Parses schedule text and CSV files into course objects |
+| `calendar.ts` | Generates ICS file content with recurring events       |
+| `ui.ts`       | All DOM manipulation, rendering courses, modals        |
+| `types.ts`    | TypeScript interfaces (`Course`, etc.)                 |
 
 ---
 
