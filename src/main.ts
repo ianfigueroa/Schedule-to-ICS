@@ -83,7 +83,7 @@ function init() {
     document.getElementById('downloadBtn')?.addEventListener('click', download);
 
     // csv file intput
-    document. getElementById('csvFileInput')?.addEventListener('change', (e) => {
+    document.getElementById('csvFileInput')?.addEventListener('change', (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) handleCSVUpload(file);
     });
