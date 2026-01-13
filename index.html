@@ -1,7 +1,76 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta  charset="UTF-8">
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UPRM Schedule to Calendar</title>
+    <link rel="stylesheet" href="/src/styles.css">
+    </head>
+    <body>
+    <div class="container">
+        <h1>UPRM Schedule to Calendar</h1>
+        <p class="subtitle">Convert your class schedule to a calendar file</p>
+        
+        <!-- Messages -->
+        <div id="success" class="message success"></div>
+        <div id="error" class="message error"></div>
+        
+        <!-- Step 1: Dates -->
+        <section class="card">
+        <h2>1. Semester Dates</h2>
+        <div class="row">
+            <div class="field">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" value="2026-01-12">
+            </div>
+            <div class="field">
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" value="2026-05-08">
+            </div>
+        </div>
+        </section>
+        
+        <!-- Step 2: Input -->
+        <section class="card">
+        <h2>2. Add Your Schedule</h2>
+        <p class="hint">Paste from the enrollment portal or upload a CSV file</p>
+        <textarea id="scheduleInput" rows="6" placeholder="MATE3031 026 4 8:30 am - 10:20 am MJ S 113 Dr. Toro"></textarea>
+        <div class="button-row">
+            <button id="addCoursesBtn" class="btn primary">Add Courses</button>
+            <label class="btn secondary file-btn">
+            Upload CSV
+            <input type="file" id="csvFileInput" accept=".csv,.txt" hidden>
+            </label>
+        </div>
+        </section>
+        
+        <!-- Step 3: Course List -->
+        <section class="card">
+        <h2>3. Your Courses</h2>
+        <p class="hint">Click to edit if something looks wrong</p>
+        <div id="coursesList">
+            <div class="empty">No courses added yet</div>
+        </div>
+        </section>
+        
+        <!-- Step 4: Download -->
+        <section class="card">
+        <h2>4. Download</h2>
+        <p class="hint">Import the .ics file into Google Calendar, Outlook, etc.</p>
+        <button id="downloadBtn" class="btn primary" disabled>Download .ics</button>
+        </section>
+        
+        <footer>Made for UPRM students</footer>
+    </div>
     
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+        <h3>Edit Course</h3>
+        <div id="editForm"></div>
+        </div>
+    </div>
+    
+    <script type="module" src="/src/main.ts"></script>
+    </body>
+    </html>
