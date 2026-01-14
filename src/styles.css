@@ -171,10 +171,20 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px;
+    padding-left: 0;
     background: #f9f9f9;
     border: 1px solid #eee;
     border-radius: 6px;
     margin-bottom: 8px;
+    overflow: hidden;
+    }
+
+    .course-item .color-bar {
+    width: 6px;
+    align-self: stretch;
+    border-radius: 6px 0 0 6px;
+    margin-right: 12px;
+    flex-shrink: 0;
     }
 
     .course-item .info {
@@ -309,6 +319,32 @@
 
     .btn-cancel {
     background: #eee;
+    }
+
+    /* Color swatches */
+    .color-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+    }
+
+    .color-swatch {
+    width: 32px;
+    height: 32px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+    }
+
+    .color-swatch:hover {
+    transform: scale(1.1);
+    }
+
+    .color-swatch.active {
+    border-color: #333;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
     }
 
     /* Footer */

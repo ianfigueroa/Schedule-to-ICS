@@ -55,7 +55,7 @@ export function generateICS(courses: Course[], startDate: string, endDate: strin
         const until = `${end.getFullYear()}${pad(end.getMonth() + 1)}${pad(end.getDate())}T235959Z`;
         const uid = `${firstClassDate.getTime()}-${course.code}@schedule`;
 
-        lines.push(
+        const eventLines = [
             'BEGIN:VEVENT',
             `UID:${uid}`,
             `DTSTAMP:${formatDateTime(now, { hour: now.getHours(), minute: now.getMinutes() })}Z`,
@@ -65,8 +65,16 @@ export function generateICS(courses: Course[], startDate: string, endDate: strin
             `SUMMARY:${course.code} ${course.section}`,
             `LOCATION:${course.location}`,
             `DESCRIPTION:Instructor: ${course.professor}`,
-            'END:VEVENT'
-        );
+        ];
+        
+        // Add color for Google Calendar (uses hex color)
+        if (course.color) {
+            eventLines.push(`COLOR:${course.color}`);
+            eventLines.push(`X-APPLE-CALENDAR-COLOR:${course.color}`);
+        }
+        
+        eventLines.push('END:VEVENT');
+        lines.push(...eventLines);
     });
 
     lines.push('END:VCALENDAR');

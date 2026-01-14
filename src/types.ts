@@ -12,6 +12,7 @@ export interface Course {
     days: DayCode[];
     location: string;
     professor: string;
+    color?: string;
 }
 
 export type DayCode = "MO" | "TU" | "WE" | "TH" | "FR";

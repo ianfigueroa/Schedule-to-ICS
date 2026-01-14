@@ -1,6 +1,21 @@
 import type { Course, DayCode } from "./types";
 import { formatTime, formatDays, formatTimeInput } from "./parser";
 
+// Google Calendar color palette (matches their UI)
+const GOOGLE_COLORS = [
+    { name: 'Tomato', hex: '#d50000' },
+    { name: 'Flamingo', hex: '#e67c73' },
+    { name: 'Tangerine', hex: '#f4511e' },
+    { name: 'Banana', hex: '#f6bf26' },
+    { name: 'Sage', hex: '#33b679' },
+    { name: 'Basil', hex: '#0b8043' },
+    { name: 'Peacock', hex: '#039be5' },
+    { name: 'Blueberry', hex: '#3f51b5' },
+    { name: 'Lavender', hex: '#7986cb' },
+    { name: 'Grape', hex: '#8e24aa' },
+    { name: 'Graphite', hex: '#616161' },
+];
+
 // Cache DOM elements
 let els: {
     success: HTMLElement;
@@ -80,13 +95,10 @@ export function renderCourses(
 
     els.coursesList.innerHTML = courses.map(course => `
         <div class="course-item" data-id="${course.id}">
+            <div class="color-bar" style="background-color: ${course.color || '#039be5'}"></div>
             <div class="info">
-                <div class="code">${course.code}${course.section ? ' - ' + course.section : ''}</div>
-                <div class="details">
-                    ${formatTime(course.startTime)} - ${formatTime(course.endTime)} · ${formatDays(course.days)}
-                    ${course.location ? ' · ' + course.location : ''}
-                    ${course.professor ? ' · ' + course.professor : ''}
-                </div>
+                <span class="code">${course.code} ${course.section}</span>
+                <span class="details">${formatTime(course.startTime)} - ${formatTime(course.endTime)} · ${formatDays(course.days)}${course.location ? ' · ' + course.location : ''}${course.professor ? ' · ' + course.professor : ''}</span>
             </div>
             <div class="actions">
                 <button class="btn-edit" title="Edit">Edit</button>
@@ -171,6 +183,19 @@ export function showEditModal(course: Course, onSave: (updated: Course) => void)
             </div>
         </div>
 
+        <div class="form-group">
+            <label>Color (for reference when setting in Google Calendar)</label>
+            <div class="color-swatches" id="colorSwatches">
+                ${GOOGLE_COLORS.map(c => `
+                    <button type="button" class="color-swatch ${(course.color || '#039be5') === c.hex ? 'active' : ''}" 
+                        data-color="${c.hex}" 
+                        style="background-color: ${c.hex}" 
+                        title="${c.name}"></button>
+                `).join('')}
+            </div>
+            <input type="hidden" id="editColor" value="${course.color || '#039be5'}">
+        </div>
+
         <div class="modal-buttons">
             <button type="button" class="btn-save">Save</button>
             <button type="button" class="btn-cancel">Cancel</button>
@@ -182,6 +207,16 @@ export function showEditModal(course: Course, onSave: (updated: Course) => void)
         const checkbox = label.querySelector('input') as HTMLInputElement;
         checkbox.addEventListener('change', () => {
             label.classList.toggle('active', checkbox.checked);
+        });
+    });
+
+    // Color swatch selection
+    els.editForm.querySelectorAll('.color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', (e) => {
+            const btn = e.target as HTMLButtonElement;
+            els.editForm.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            btn.classList.add('active');
+            (els.editForm.querySelector('#editColor') as HTMLInputElement).value = btn.dataset.color!;
         });
     });
 
@@ -211,6 +246,7 @@ export function showEditModal(course: Course, onSave: (updated: Course) => void)
             days: selectedDays,
             location: (els.editForm.querySelector('#editLocation') as HTMLInputElement).value.trim(),
             professor: (els.editForm.querySelector('#editProfessor') as HTMLInputElement).value.trim(),
+            color: (els.editForm.querySelector('#editColor') as HTMLInputElement).value,
         };
 
         onSave(updated);
