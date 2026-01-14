@@ -23,14 +23,22 @@ Because manually adding each class to your calendar is tedious, and the enrollme
 3. Set your semester start/end dates
 4. Download the .ics file
 5. Import it into your calendar app
-   where
-   The parser handles the standard format from the portal:
+
+The parser handles the standard format from the portal:
 
 ```
 MATE3031 026 4 8:30 am - 10:20 am MJ S 113 Michael
 ```
 
 You can also upload a CSV if you have your schedule in that format.
+
+---
+
+## Tech Stack
+
+- TypeScript
+- Vite
+- Vanilla JS (no framework)
 
 ---
 
@@ -76,16 +84,22 @@ You can also upload a CSV if you have your schedule in that format.
 | `ui.ts`       | All DOM manipulation, rendering courses, modals        |
 | `types.ts`    | TypeScript interfaces (`Course`, etc.)                 |
 
+📖 **[Technical Documentation](./TECHNICAL_DOCS.md)** — deep dive into how the parser and ICS generation work.
+
 ---
 
 ## Roadmap
 
-- [ ] Color-coded classes by course type or custom colors
-- [ ] Improve parsing algorithm for edge cases
-- [ ] Screenshot/OCR text reading (upload image of schedule)
-- [ ] More flexible text parsing for different formats
-- [ ] Export to Google Calendar API directly
-- [ ] Dark mode
+- [ ] Export to Google Calendar API directly (with color support)
+- [ ] Add a calendar preview to show how it would look
+- [ ] Add links to UPRM website for course details
+
+### Completed
+
+- [x] Dark mode
+- [x] Improved parsing algorithm for edge cases
+- [x] Flexible text parsing for different formats
+- [x] Color picker in UI (reference only — ICS doesn't support colors on import)
 
 Have a suggestion? [Open an issue](https://github.com/ianfigueroa/schedule_to_ics/issues)!
 
@@ -97,5 +111,3 @@ Have a suggestion? [Open an issue](https://github.com/ianfigueroa/schedule_to_ic
 npm install
 npm run dev
 ```
-
----
