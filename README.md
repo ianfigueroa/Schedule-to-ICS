@@ -84,7 +84,7 @@ You can also upload a CSV if you have your schedule in that format.
 | `ui.ts`       | All DOM manipulation, rendering courses, modals        |
 | `types.ts`    | TypeScript interfaces (`Course`, etc.)                 |
 
-**[Technical Documentation](./documentation.md)** — deep dive into how the parser and ICS generation work.
+**[Technical Documentation](./docs/documentation.md)** — deep dive into how the parser and ICS generation work.
 
 ---
 
