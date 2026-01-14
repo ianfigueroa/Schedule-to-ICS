@@ -1,13 +1,25 @@
 import type { Time, Course, DayCode, UPRMDay } from "./types";
 
-// UPRM' Spanish days to ICS format
+// UPRM Spanish days to ICS format
 // L - Monday (Lunes), M - Tuesday (Martes), W - Wednesday (Miércoles), J - Thursday (Jueves), V - Friday (Viernes)
-const SPANISH_Days: Record<string, DayCode> = {
+const SPANISH_DAYS: Record<string, DayCode> = {
     "L": "MO",
     "M": "TU",
     "W": "WE",
     "J": "TH",
     "V": "FR"
+};
+
+// English two-letter day codes (Tu Th format from new portal)
+const ENGLISH_DAYS: Record<string, DayCode> = {
+    "MO": "MO",
+    "TU": "TU",
+    "WE": "WE",
+    "TH": "TH",
+    "FR": "FR",
+    "M": "MO",   // M W format
+    "W": "WE",
+    "F": "FR",
 };
 
 // Reverse mapping for display
@@ -53,31 +65,33 @@ export function parseTime(str: string): Time | null {
     return null;
 }
 
-// Parse days from strings like "MO WE FR", "L M W", "M AND W"
+// Parse days from strings like "MO WE FR", "L M W", "Tu Th", "M W", "MJ", "LWV"
 export function parseDays(str: string): DayCode[] {
     const days: DayCode[] = [];
-    const upper = str.toUpperCase();
+    const cleaned = str.trim();
 
-    // Check for english two letter days
-    for (const [code, day] of [
-        ['MO', 'MO'],
-        ['TU', 'TU'],
-        ['WE', 'WE'],
-        ['TH', 'TH'],
-        ['FR', 'FR']
-    ] as [string, DayCode][]) {
-        if (upper.includes(code) && !days.includes(day)) {
-            days.push(day);
+    // First try: "Tu Th" or "M W" format (space separated, English)
+    const spaceParts = cleaned.split(/\s+/);
+    if (spaceParts.length >= 1) {
+        for (const part of spaceParts) {
+            const upper = part.toUpperCase();
+            // Check two-letter codes first (Tu, Th, Mo, We, Fr)
+            if (ENGLISH_DAYS[upper]) {
+                const day = ENGLISH_DAYS[upper];
+                if (!days.includes(day)) days.push(day);
+            }
         }
     }
 
-    // Spanish Next
-    if (days.length === 0) {
-        for (const char of upper.replace(/\s+/g, '')) {
-            const day = SPANISH_Days[char];
-            if (day && !days.includes(day)) {
-                days.push(day);
-            }
+    // If we found days with English format, return them
+    if (days.length > 0) return days;
+
+    // Second try: Spanish concatenated format "MJ", "LWV", "LMWJV"
+    const upper = cleaned.toUpperCase().replace(/\s+/g, '');
+    for (const char of upper) {
+        const day = SPANISH_DAYS[char];
+        if (day && !days.includes(day)) {
+            days.push(day);
         }
     }
 
@@ -86,6 +100,7 @@ export function parseDays(str: string): DayCode[] {
 
 // Parse a single line of schedule text
 function parseLine(line: string): Course | null {
+    
     // look for the time range dis is our anchor point
     const timeMatch = line.match(
         /(\d{1,2}:\d{2}\s*(?:am|pm)?)\s*-\s*(\d{1,2}:\d{2}\s*(?:am|pm)?)/i
@@ -110,36 +125,83 @@ function parseLine(line: string): Course | null {
     let section = '';
 
     for (const part of beforeParts) {
-        // course codes look like MATE3031, CIIC4010
-        if (/^[A-Z]{2,4}\d{4}[A-Z]?$/i.test(part)) {
+        // course codes look like MATE3031, CIIC4010, CIIC4010L
+        if (/^[A-Z]{4}\d{4}[A-Z]?$/i.test(part)) {
             code = part.toUpperCase();
         }
-        // sections are 2-3 digit numbers
-        else if (/^\d{2,3}$/.test(part) && !section) {
+        // sections are 2-3 digit numbers or like "090L"
+        else if (/^\d{2,3}[A-Z]?$/i.test(part) && !section) {
             section = part;
         }
     }
 
-    // fallback  just use first thing as code
+    // fallback: just use first thing as code
     if (!code && beforeParts[0]) {
         code = beforeParts[0].toUpperCase();
     }
 
     // parse the stuff after the time (days, location, professor)
+    // Format from old portal: "MJ F C Pedro Vasquez" or "LWV S 113 Some Professor"
     const afterParts = afterTime.split(/\s+/);
     let days: DayCode[] = [];
-    let locationStart = 0;
+    let locationParts: string[] = [];
+    let professorParts: string[] = [];
+    let currentSection: 'days' | 'location' | 'professor' = 'days';
 
-    // find the days
     for (let i = 0; i < afterParts.length; i++) {
         const part = afterParts[i];
-        // days are usually just letters like "MJ" or "LWV"
-        if (/^[LMWJV]+$/i.test(part) && part.length <= 5) {
-            days = parseDays(part);
-            if (days.length > 0) {
-                locationStart = i + 1;
-                break;
+
+        if (currentSection === 'days') {
+            // Try to parse as days (Spanish format: MJ, LWV, etc.)
+            if (/^[LMWJV]+$/i.test(part) && part.length <= 5) {
+                days = parseDays(part);
+                currentSection = 'location';
+                continue;
             }
+            // English format: Tu, Th, M, W, F
+            if (/^(Tu|Th|Mo|We|Fr|M|W|F)$/i.test(part)) {
+                // Collect consecutive day codes
+                let dayStr = part;
+                while (i + 1 < afterParts.length && /^(Tu|Th|Mo|We|Fr|M|W|F)$/i.test(afterParts[i + 1])) {
+                    i++;
+                    dayStr += ' ' + afterParts[i];
+                }
+                days = parseDays(dayStr);
+                currentSection = 'location';
+                continue;
+            }
+        }
+
+        if (currentSection === 'location') {
+            // Room patterns: "F-B", "CH-005", "S-113", "F", "S", "CH", etc. followed by room number
+            // Also handles: "F C" (building F, room C... weird but ok)
+            if (/^[A-Z]{1,4}[-]?[A-Z0-9]*$/i.test(part)) {
+                // Check if next part is a room number
+                const nextPart = afterParts[i + 1];
+                if (nextPart && /^[A-Z]?\d*[A-Z]?$/i.test(nextPart) && nextPart.length <= 4) {
+                    locationParts.push(part, nextPart);
+                    i++;
+                } else if (/^[A-Z]{1,4}[-]?\d{1,4}$/i.test(part)) {
+                    // Combined format like "CH-005" or "S113"
+                    locationParts.push(part);
+                } else {
+                    // Single letter/short building code
+                    locationParts.push(part);
+                }
+                // Check if we've collected enough for location (usually 1-2 parts)
+                if (locationParts.length >= 2 || (locationParts.length === 1 && /\d/.test(locationParts[0]))) {
+                    currentSection = 'professor';
+                }
+                continue;
+            }
+            // If it looks like a name (starts with capital, has lowercase), switch to professor
+            if (/^[A-Z][a-z]/.test(part)) {
+                currentSection = 'professor';
+            }
+        }
+
+        if (currentSection === 'professor') {
+            professorParts.push(part);
         }
     }
 
@@ -148,50 +210,8 @@ function parseLine(line: string): Course | null {
         days = ['MO'];
     }
 
-    // everything else is location and professor - gotta be smart about splitting them
-    const restParts = afterParts.slice(locationStart);
-    let location = '';
-    let professor = '';
-    let professorStart = 0;
-
-    // try to find location (looks like "S 113", "CH221", "S-113", "II 225")
-    for (let i = 0; i < restParts.length; i++) {
-        const part = restParts[i];
-        const nextPart = restParts[i + 1] || '';
-
-        // pattern: "S 113" - building letter(s) then space then room number
-        if (/^[A-Z]{1,4}$/i.test(part) && /^\d{1,4}$/.test(nextPart)) {
-            location = `${part} ${nextPart}`;
-            professorStart = i + 2;
-            break;
-        }
-        // pattern: "S113" or "CH-221" - building and room together
-        else if (/^[A-Z]{1,4}[-]?\d{1,4}$/i.test(part)) {
-            location = part;
-            professorStart = i + 1;
-            break;
-        }
-        // pattern: just building code like "II" before a name
-        else if (/^[A-Z]{1,2}$/i.test(part) && nextPart && /^[A-Z][a-z]/.test(nextPart)) {
-            // next part looks like a name, so this short code might be building without room
-            location = part;
-            professorStart = i + 1;
-            break;
-        }
-    }
-
-    // if no location pattern matched, check if first part could be location
-    if (!location && restParts.length > 0) {
-        const first = restParts[0];
-        // if first part is short uppercase, might be building code
-        if (/^[A-Z]{1,4}$/i.test(first) && restParts.length > 1) {
-            location = first;
-            professorStart = 1;
-        }
-    }
-
-    // everything after location is professor
-    professor = restParts.slice(professorStart).join(' ').trim();
+    const location = locationParts.join(' ').replace(/-/g, '-');
+    const professor = professorParts.join(' ').trim();
 
     return {
         id: Date.now() + Math.random(), // good enough unique id
@@ -220,57 +240,113 @@ function isCSV(text: string): boolean {
     );
 }
 
+// Parse "Meetings" field from old portal: "12:30 pm - 2:20 pm MJ F C"
+// Format: time range + days + room (building + room number)
+function parseMeetingsField(meetings: string): { days: DayCode[], start: Time | null, end: Time | null, room: string } {
+    let days: DayCode[] = [];
+    let start: Time | null = null;
+    let end: Time | null = null;
+    let room = '';
 
-// Parse into CSV format
+    // Extract time range first
+    const timeMatch = meetings.match(/(\d{1,2}:\d{2}\s*(?:am|pm)?)\s*-\s*(\d{1,2}:\d{2}\s*(?:am|pm)?)/i);
+    if (timeMatch) {
+        start = parseTime(timeMatch[1]);
+        end = parseTime(timeMatch[2]);
+    }
+
+    // Get the part after the time range
+    const afterTime = timeMatch 
+        ? meetings.substring(timeMatch.index! + timeMatch[0].length).trim()
+        : meetings;
+
+    // Split by whitespace
+    const parts = afterTime.split(/\s+/).filter(p => p.length > 0);
+    
+    // First part should be days (MJ, LWV, etc.)
+    if (parts.length > 0) {
+        const potentialDays = parseDays(parts[0]);
+        if (potentialDays.length > 0) {
+            days = potentialDays;
+            // Remaining parts are room (e.g., "F C" or "S 113" or "CH 124")
+            if (parts.length >= 2) {
+                room = parts.slice(1).join(' ');
+            }
+        }
+    }
+
+    return { days, start, end, room };
+}
+
+// Parse CSV format - handles:
+// - New portal CSV with separate columns (Course, Section, Days, Schedule, Room)
+// - Old portal CSV with combined Meetings column
+// - Excel exports that wrap values in ="..." 
 function parseCSV(text: string): Course[] {
     const lines = text.trim().split('\n');
-    const delim = lines[0].includes('\t') ? '\t' : ','; 
-    const header = lines[0].split(delim).map(h => h.trim().toLowerCase());
+    const delim = lines[0].includes('\t') ? '\t' : ',';
+    
+    // Clean each cell and build header
+    const cleanCell = (cell: string) => cell.trim().replace(/^="?|"?$/g, '');
+    const header = lines[0].split(delim).map(h => cleanCell(h).toLowerCase());
 
-    // Identify column indices
-    const findCol  = (name: string) => header.findIndex(h => h.includes(name));
+    // Find column by checking if header contains any of the given names
+    const findCol = (names: string[]) => header.findIndex(h => names.some(n => h.includes(n)));
 
-    const courseCol = findCol("course")
-    const sectionCol = findCol("section");
-    const daysCol = findCol("day");
-    const scheduleCol = Math.max(findCol("schedule"), findCol("time"));
-    const roomCol = Math.max(findCol("room"), findCol("location"));
-    const courses:  Course[] = [];
+    const courseCol = findCol(["course"]);
+    const sectionCol = findCol(["section"]);
+    const daysCol = findCol(["days", "day"]);
+    const scheduleCol = findCol(["schedule", "time"]);
+    const roomCol = findCol(["room", "location"]);
+    const meetingsCol = findCol(["meetings", "meeting"]);  // Old portal format
+    const professorCol = findCol(["professor", "instructor", "prof"]);
+    
+    // Detect which format we're dealing with
+    const isOldPortal = meetingsCol >= 0;
+    
+    const courses: Course[] = [];
 
-
-    //  parse each line
+    // Parse each data row
     for (let i = 1; i < lines.length; i++) {
-        const row = lines[i].split(delim).map(c => c.trim());
+        const row = lines[i].split(delim).map(c => cleanCell(c));
         if (!row[0]) continue;
 
-        const code = row[courseCol >= 0 ? courseCol : 0]  || '';
-        if (!/^[A-Z]{4}\d{4}/i.test(code)) continue; // skip invalid course codes
+        const code = row[courseCol >= 0 ? courseCol : 0] || '';
+        if (!/^[A-Z]{4}\d{4}/i.test(code)) continue; // not a valid course code, skip
 
         const section = row[sectionCol >= 0 ? sectionCol : 1] || '';
-        const daysStr = row[daysCol >= 0 ? daysCol : 4] || '';
-        const timeStr = row[scheduleCol >= 0 ? scheduleCol : 5] || '';
-        const room = row[roomCol >= 0 ? roomCol : 6] || '';
+        const professor = professorCol >= 0 ? row[professorCol] || '' : '';
 
-        const days = parseDays(daysStr);
-        if (days.length === 0) continue;
-        
-        //parse time which could be range or just start time
+        let days: DayCode[] = [];
         let start: Time | null = null;
         let end: Time | null = null;
+        let room = '';
 
-        const range = timeStr.match(/(\d{1,2}:\d{2}\s*(?:am|pm)?)\s*-\s*(\d{1,2}:\d{2}\s*(?:am|pm)?)/i);
-        if (range) {
-            start = parseTime(range[1]);
-            end = parseTime(range[2]);
+        if (isOldPortal) {
+            // Old portal: "12:30 pm - 2:20 pm MJ F C" in meetings column
+            const meetingsStr = row[meetingsCol] || '';
+            const parsed = parseMeetingsField(meetingsStr);
+            days = parsed.days;
+            start = parsed.start;
+            end = parsed.end;
+            room = parsed.room;
         } else {
-            start = parseTime(timeStr)
-            if (start) {
-                const duration = (days.includes("TU") || days.includes("TH")) ? 75 : 90; // shorter duration for Tue/Thu
-                const totalMins = start.hour * 60 + start.minute + duration;
-                end = { hour: Math.floor(totalMins / 60), minute: totalMins % 60 };
+            // New portal: separate columns for days, schedule, room
+            const daysStr = row[daysCol >= 0 ? daysCol : 4] || '';
+            const timeStr = row[scheduleCol >= 0 ? scheduleCol : 5] || '';
+            room = row[roomCol >= 0 ? roomCol : 6] || '';
+
+            days = parseDays(daysStr);
+            
+            // Parse time range
+            const range = timeStr.match(/(\d{1,2}:\d{2}\s*(?:am|pm)?)\s*-\s*(\d{1,2}:\d{2}\s*(?:am|pm)?)/i);
+            if (range) {
+                start = parseTime(range[1]);
+                end = parseTime(range[2]);
             }
         }
 
+        if (days.length === 0) continue;
         if (!start || !end) continue;
 
         courses.push({
@@ -281,51 +357,62 @@ function parseCSV(text: string): Course[] {
             endTime: end,
             days,
             location: room,
-            professor: ''
+            professor
         });
     }
     return courses;
 }
 
-// Main parse function
+// Main parse function - handles multiple input formats:
+// 1. CSV from new portal (columns: Course, Section, Days, Schedule, Room)
+// 2. CSV from Excel export with ="value" format  
+// 3. Tab-separated text from old portal where professor is on next line
 export function parseSchedule(text: string): Course[] {
-    // we try to detect if it's csv first
-    if (isCSV(text)) {
-        const courses = parseCSV(text);
+    // Clean up Excel's weird ="value" format if present
+    const cleanedText = text.replace(/="([^"]*)"/g, '$1');
+    
+    // Try CSV parsing first
+    if (isCSV(cleanedText)) {
+        const courses = parseCSV(cleanedText);
         if (courses.length > 0) return courses;
     }
 
-    // otherwise treat as plain text
-    const lines = text.split('\n').filter(L => L.trim().length > 5);
-
-    // expand lines that might have multiple courses smashed together
-    const expanded: string[] = [];
-    for (const line of lines) {
-        const chunks = splitByCourseCode(line);
-        expanded.push(...chunks);
-    }
-    return expanded.map(parseLine).filter((c): c is Course => c !== null && !!c.code);
-}
-
-
-// Split text that has multiple courses without line breaks
-function splitByCourseCode(text: string): string[] {
-    const matches: number[] = [];
-    const pattern = /[A-Z]{4}\d{4}/gi;  // finds MATE3032, ING1321, etc.
-    let m;
+    // Plain text parsing (old portal copy-paste format)
+    // Professor name appears on line after the course info
+    const lines = cleanedText.split('\n');
+    const courses: Course[] = [];
     
-    while ((m = pattern.exec(text)) !== null) {
-        matches.push(m.index);
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.length < 5) continue;
+        
+        // Try to parse this line as a course
+        const course = parseLine(line);
+        if (course && course.code) {
+            // Check if next line is professor name (not a course code, not empty)
+            const nextLine = lines[i + 1]?.trim() || '';
+            if (nextLine && !nextLine.match(/^[A-Z]{4}\d{4}/) && nextLine.length > 2) {
+                // Skip lines that are just metadata like "Laboratorio" or "Sección múltiple"
+                if (!nextLine.match(/^(Laboratorio|Secci[oó]n|Multiple)/i)) {
+                    course.professor = nextLine;
+                }
+                i++; // Skip the professor line
+                
+                // Also skip any additional info lines (Laboratorio, Sección múltiple, etc.)
+                while (i + 1 < lines.length) {
+                    const peekLine = lines[i + 1]?.trim() || '';
+                    if (peekLine.match(/^(Laboratorio|Secci[oó]n|Multiple)/i)) {
+                        i++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            courses.push(course);
+        }
     }
-
-    // if only one course code found, return as-is
-    if (matches.length <= 1) return [text];
-
-    // split at each course code position
-    return matches.map((idx, i) => {
-        const end = i < matches.length - 1 ? matches[i + 1] : text.length;
-        return text.substring(idx, end).trim();
-    }).filter(s => s.length > 5);
+    
+    return courses;
 }
 
 // Format time for display (12-hour with am/pm)
