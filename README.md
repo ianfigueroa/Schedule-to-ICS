@@ -101,7 +101,7 @@ You can also upload a CSV if you have your schedule in that format.
 - [x] Flexible text parsing for different formats
 - [x] Color picker in UI (reference only — ICS doesn't support colors on import)
 
-Have a suggestion? [Open an issue](https://github.com/ianfigueroa/schedule_to_ics/issues)!
+Have a suggestion? [Open an issue](https://github.com/ianfigueroa/schedule_to_ics/issues)! It would be greatly appreciated. 
 
 ---
 
