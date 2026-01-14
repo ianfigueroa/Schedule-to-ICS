@@ -60,33 +60,77 @@ function download() {
     UI.showSuccess("Calendar downloaded.");
 }
 
-// handle csv file upload
+// handle csv file upload (from input or drag-drop)
 function handleCSVUpload(file: File) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const text = e.target?.result;
         if (typeof text === 'string') {
             UI.setScheduleText(text);
-            UI.showSuccess("CSV loaded - click 'Add Courses' to parse.");
+            UI.showSuccess("File loaded - click 'Add Courses' to parse.");
         }
     };
     reader.readAsText(file);
 }
 
+// toggle dark mode
+function toggleDarkMode() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
 
-// sets everything
+// setup drag and drop for the text area
+function setupDragDrop() {
+    const dropZone = document.getElementById('dropZone');
+    if (!dropZone) return;
+
+    // prevent default drag behaviors on document
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(event => {
+        dropZone.addEventListener(event, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    // highlight drop zone when dragging over
+    ['dragenter', 'dragover'].forEach(event => {
+        dropZone.addEventListener(event, () => dropZone.classList.add('drag-over'));
+    });
+
+    ['dragleave', 'drop'].forEach(event => {
+        dropZone.addEventListener(event, () => dropZone.classList.remove('drag-over'));
+    });
+
+    // handle dropped files
+    dropZone.addEventListener('drop', (e) => {
+        const file = (e as DragEvent).dataTransfer?.files[0];
+        if (file) handleCSVUpload(file);
+    });
+}
+
+
+// sets everything up
 function init() {
+    // load saved theme preference
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
     UI.initUI();
 
     // wire up buttons
     document.getElementById('addCoursesBtn')?.addEventListener('click', AddCourses);
     document.getElementById('downloadBtn')?.addEventListener('click', download);
+    document.getElementById('darkModeBtn')?.addEventListener('click', toggleDarkMode);
 
-    // csv file intput
+    // csv file input
     document.getElementById('csvFileInput')?.addEventListener('change', (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) handleCSVUpload(file);
     });
+
+    // setup drag and drop
+    setupDragDrop();
 }
 
-;document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', init);

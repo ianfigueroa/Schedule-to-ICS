@@ -9,7 +9,13 @@
     <body>
     <div class="container">
         <header class="header">
-            <h1>UPRM Schedule to Calendar</h1>
+            <div class="header-row">
+                <h1>UPRM Schedule to Calendar</h1>
+                <button id="darkModeBtn" class="btn-toggle" title="Toggle dark mode">
+                    <span class="icon-sun">Light</span>
+                    <span class="icon-moon">Dark</span>
+                </button>
+            </div>
             <p class="subtitle">Convert your class schedule to a calendar file</p>
         </header>
         
@@ -35,11 +41,16 @@
         <!-- Step 2: Input -->
         <section class="card">
         <h2>2. Add Your Schedule</h2>
-        <p class="hint">Copy-paste from the new portal (enrollment table) or old portal (registration page with professor names). You can also upload an Excel/CSV export.</p>
-        <textarea id="scheduleInput" rows="6" placeholder="MATE3031  066  4  12:30 pm - 2:20 pm  MJ   F C
+        <p class="hint">Copy-paste from the new portal (enrollment table) or old portal (registration page with professor names). You can also drag & drop or upload a CSV/Excel file.</p>
+        <div id="dropZone" class="drop-zone">
+            <textarea id="scheduleInput" rows="6" placeholder="MATE3031  066  4  12:30 pm - 2:20 pm  MJ   F C
 Pedro Vasquez Urbano
 CIIC3075  030  3  9:30 am - 10:20 am  LWV   S 113
-Kejie Lu"></textarea>
+Kejie Lu
+
+— or drag & drop a CSV file here —"></textarea>
+            <div class="drop-overlay">Drop file here</div>
+        </div>
         <div class="button-row">
             <button id="addCoursesBtn" class="btn primary">Add Courses</button>
             <label class="btn secondary file-btn">

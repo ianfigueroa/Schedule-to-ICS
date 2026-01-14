@@ -5,12 +5,45 @@
     padding: 0;
     }
 
+    :root {
+    --bg: #f5f5f5;
+    --bg-card: white;
+    --text: #333;
+    --text-muted: #666;
+    --border: #ddd;
+    --border-light: #eee;
+    --primary: #0066cc;
+    --primary-hover: #0055aa;
+    --success-bg: #d4edda;
+    --success-text: #155724;
+    --error-bg: #f8d7da;
+    --error-text: #721c24;
+    --course-bg: #f9f9f9;
+    }
+
+    [data-theme="dark"] {
+    --bg: #1a1a2e;
+    --bg-card: #16213e;
+    --text: #eee;
+    --text-muted: #aaa;
+    --border: #333;
+    --border-light: #2a2a4a;
+    --primary: #4da6ff;
+    --primary-hover: #3d8bd4;
+    --success-bg: #1e3a2f;
+    --success-text: #7dcea0;
+    --error-bg: #3d1f1f;
+    --error-text: #e57373;
+    --course-bg: #1e2a4a;
+    }
+
     body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #f5f5f5;
-    color: #333;
+    background: var(--bg);
+    color: var(--text);
     line-height: 1.5;
     padding: 20px;
+    transition: background 0.3s, color 0.3s;
     }
 
     /* Layout */
@@ -24,13 +57,40 @@
     margin-bottom: 24px;
     }
 
+    .header-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    }
+
+    .btn-toggle {
+    background: var(--border);
+    border: none;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: var(--text);
+    transition: background 0.2s;
+    }
+
+    .btn-toggle:hover {
+    background: var(--border-light);
+    }
+
+    /* Show/hide sun/moon icons based on theme */
+    .icon-moon { display: none; }
+    [data-theme="dark"] .icon-sun { display: none; }
+    [data-theme="dark"] .icon-moon { display: inline; }
+
     h1 {
     font-size: 1.5rem;
     margin-bottom: 4px;
     }
 
     .subtitle {
-    color: #666;
+    color: var(--text-muted);
     margin-bottom: 0;
     }
 
@@ -41,11 +101,12 @@
 
     /* Cards */
     .card {
-    background: white;
-    border: 1px solid #ddd;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 16px;
+    transition: background 0.3s, border-color 0.3s;
     }
 
     .card h2 {
@@ -55,7 +116,7 @@
 
     .hint {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--text-muted);
     margin-bottom: 12px;
     }
 
@@ -79,21 +140,55 @@
     input, textarea {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.9rem;
     font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text);
+    transition: background 0.3s, border-color 0.3s, color 0.3s;
     }
 
     input:focus, textarea:focus {
     outline: none;
-    border-color: #0066cc;
+    border-color: var(--primary);
     }
 
     textarea {
     resize: vertical;
     font-family: monospace;
     font-size: 0.85rem;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+    position: relative;
+    }
+
+    .drop-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--primary);
+    color: white;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    }
+
+    .drop-zone.drag-over .drop-overlay {
+    display: flex;
+    }
+
+    .drop-zone.drag-over textarea {
+    border-color: var(--primary);
+    border-style: dashed;
     }
 
     /* Buttons */
@@ -104,19 +199,20 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
+    transition: background 0.2s;
     }
 
     .btn.primary {
-    background: #0066cc;
+    background: var(--primary);
     color: white;
     }
 
     .btn.primary:hover {
-    background: #0055aa;
+    background: var(--primary-hover);
     }
 
     .btn.primary:disabled {
-    background: #ccc;
+    background: var(--border);
     cursor: not-allowed;
     }
 
@@ -156,13 +252,13 @@
     }
 
     .message.success {
-    background: #d4edda;
-    color: #155724;
+    background: var(--success-bg);
+    color: var(--success-text);
     }
 
     .message.error {
-    background: #f8d7da;
-    color: #721c24;
+    background: var(--error-bg);
+    color: var(--error-text);
     }
 
     /* Course list */
@@ -172,11 +268,12 @@
     align-items: center;
     padding: 12px;
     padding-left: 0;
-    background: #f9f9f9;
-    border: 1px solid #eee;
+    background: var(--course-bg);
+    border: 1px solid var(--border-light);
     border-radius: 6px;
     margin-bottom: 8px;
     overflow: hidden;
+    transition: background 0.3s, border-color 0.3s;
     }
 
     .course-item .color-bar {
@@ -197,7 +294,7 @@
 
     .course-item .details {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--text-muted);
     margin-top: 2px;
     }
 
@@ -220,7 +317,7 @@
     }
 
     .empty {
-    color: #999;
+    color: var(--text-muted);
     font-style: italic;
     padding: 20px;
     text-align: center;
@@ -244,11 +341,12 @@
     }
 
     .modal-content {
-    background: white;
+    background: var(--bg-card);
     padding: 24px;
     border-radius: 8px;
     width: 90%;
     max-width: 500px;
+    transition: background 0.3s;
     }
 
     .modal-content h3 {
@@ -280,11 +378,12 @@
 
     .day-checkbox {
     padding: 8px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9rem;
     user-select: none;
+    transition: background 0.2s, border-color 0.2s;
     }
 
     .day-checkbox input {
@@ -292,9 +391,9 @@
     }
 
     .day-checkbox.active {
-    background: #0066cc;
+    background: var(--primary);
     color: white;
-    border-color: #0066cc;
+    border-color: var(--primary);
     }
 
     .modal-buttons {
@@ -310,15 +409,17 @@
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.9rem;
+    transition: background 0.2s;
     }
 
     .btn-save {
-    background: #0066cc;
+    background: var(--primary);
     color: white;
     }
 
     .btn-cancel {
-    background: #eee;
+    background: var(--border);
+    color: var(--text);
     }
 
     /* Color swatches */
@@ -343,14 +444,14 @@
     }
 
     .color-swatch.active {
-    border-color: #333;
-    box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
+    border-color: var(--text);
+    box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--text);
     }
 
     /* Footer */
     footer {
     text-align: center;
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.85rem;
     margin-top: 24px;
     }
