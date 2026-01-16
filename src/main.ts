@@ -2,6 +2,7 @@ import type { Course } from './types';
 import { parseSchedule } from './parser';
 import { downloadICS, generateICS } from './calendar';
 import * as UI from './ui';
+import { inject } from '@vercel/analytics';
 
 // app state 
 let courses : Course[] = [];
@@ -115,6 +116,9 @@ function init() {
     // load saved theme preference
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // initialize analytics
+    inject();
 
     UI.initUI();
 
