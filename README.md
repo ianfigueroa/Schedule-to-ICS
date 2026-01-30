@@ -6,7 +6,7 @@
 
 Import directly into Google Calendar, Apple Calendar, Outlook, and more.
 
-🔗 **[Live Demo](https://schedule-to-ics.vercel.app/)**
+ **[Live Demo](https://schedule-to-ics.vercel.app/)**
 
 </div>
 
@@ -42,39 +42,7 @@ You can also upload a CSV if you have your schedule in that format.
 
 ---
 
-## System Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        index.html                           │
-│                    (User Interface)                         │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                        main.ts                              │
-│              (Application Entry Point)                      │
-│         Handles events, coordinates modules                 │
-└───────┬─────────────────┬─────────────────┬─────────────────┘
-        │                 │                 │
-        ▼                 ▼                 ▼
-┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-│   parser.ts   │ │  calendar.ts  │ │     ui.ts     │
-│               │ │               │ │               │
-│ Parses course │ │ Generates ICS │ │ DOM updates,  │
-│ text & CSV    │ │ file format   │ │ modals, forms │
-└───────────────┘ └───────────────┘ └───────────────┘
-        │                 │                 │
-        └─────────────────┼─────────────────┘
-                          ▼
-              ┌───────────────────────┐
-              │       types.ts        │
-              │   Shared TypeScript   │
-              │   type definitions    │
-              └───────────────────────┘
-```
-
-### Module Breakdown
+## Code layout
 
 | File          | Purpose                                                |
 | ------------- | ------------------------------------------------------ |
@@ -83,8 +51,6 @@ You can also upload a CSV if you have your schedule in that format.
 | `calendar.ts` | Generates ICS file content with recurring events       |
 | `ui.ts`       | All DOM manipulation, rendering courses, modals        |
 | `types.ts`    | TypeScript interfaces (`Course`, etc.)                 |
-
-**[Technical Documentation](./docs/documentation.md)** — deep dive into how the parser and ICS generation work.
 
 ---
 
@@ -99,9 +65,9 @@ You can also upload a CSV if you have your schedule in that format.
 - [x] Dark mode
 - [x] Improved parsing algorithm for edge cases
 - [x] Flexible text parsing for different formats
-- [x] Color picker in UI (reference only — ICS doesn't support colors on import)
+- [x] Color picker in UI (reference only: ICS doesn't support colors on import)
 
-Have a suggestion? [Open an issue](https://github.com/ianfigueroa/schedule_to_ics/issues)! It would be greatly appreciated. 
+Have a suggestion? [Open an issue](https://github.com/ianfigueroa/Schedule-to-ICS/issues)! It would be greatly appreciated. 
 
 ---
 
